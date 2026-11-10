@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -25,6 +25,7 @@
   @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
   .line.total{font-size:22px;font-weight:800;padding-top:16px;border-top:2px dashed #cbd5e0;margin-top:16px;color:#1a202c; display:flex; justify-content:space-between;}
   .line.total span:last-child{color:#4a8c33;}
+  .rate-info {font-size: 13px; color: #718096; text-align: right; margin-top: 8px; font-style: italic;}
 </style>
 </head>
 <body>
@@ -34,12 +35,14 @@
   </div>
   <h1>Калькулятор изделий</h1>
   <h2 class="section-title">Параметры изделия</h2>
+  
   <label>Тип изделия</label>
   <select id="productType" onchange="updateUI()">
     <option value="kitchen">Кухонная столешница</option>
     <option value="bath">Столешница в ванную</option>
     <option value="sill">Подоконник</option>
   </select>
+  
   <div id="shapeBlock">
     <label>Форма</label>
     <select id="shape" onchange="updateShapeFields()">
@@ -48,37 +51,41 @@
       <option value="u">П-образная</option>
     </select>
   </div>
+  
   <div class="row">
     <div id="div_len1"><label id="lbl_len1">Длина, мм</label><input id="len1" type="number" value="3000" min="0"></div>
     <div id="div_len2" style="display:none"><label>Крыло 2, мм</label><input id="len2" type="number" value="1500" min="0"></div>
     <div id="div_len3" style="display:none"><label>Крыло 3, мм</label><input id="len3" type="number" value="1500" min="0"></div>
   </div>
-  <div class="row">
-    <div><label>Ширина, мм</label><input id="width" type="number" value="600" min="100"></div>
-    <div id="thicknessBlock"><label>Толщина</label>
-      <select id="thickness"><option value="24">24 мм</option><option value="40">40 мм</option></select>
-    </div>
+  
+  <div>
+    <label>Ширина, мм</label>
+    <input id="width" type="number" value="600" min="100">
   </div>
+
   <div class="row">
     <div><label>Серия камня</label>
       <select id="series">
         <option value="P104">Grandex P104 (Белый однотонный)</option>
         <option value="P">Grandex P (Однотонные камни)</option>
-<option value="S">Grandex S/D (Крошка)</option>
+        <option value="S">Grandex S/D (Крошка)</option>
         <option value="A">Grandex A (Крупная крошка)</option>
         <option value="EMC">Grandex E/M/C (С разводами)</option>
       </select>
     </div>
     <div id="bortikBlock"><label>Бортик, п.м.</label><input id="bortik" type="number" value="0" min="0" step="0.1"></div>
   </div>
+
   <div id="sinkBlock">
     <label>Мойка / Раковина</label>
     <select id="sink" onchange="toggleDisposal()"></select>
   </div>
+  
   <div id="disposalBlock" style="display:none;">
     <label>Усиление под измельчитель</label>
     <select id="disposal"><option value="no">Нет</option><option value="yes">Да</option></select>
   </div>
+
   <div class="row" id="hobBlock">
     <div>
       <label>Вырез варочной</label>
@@ -90,6 +97,7 @@
     </div>
     <div><label>Вырез смесителя</label><input type="text" value="Бесплатно" disabled></div>
   </div>
+
   <div id="panelToggleBlock">
     <div class="toggle-container">
       <input type="checkbox" id="hasPanel" onchange="togglePanelDisplay()">
@@ -110,12 +118,38 @@
       </div>
     </div>
   </div>
-  <label>Курс ЦБ, ₽/$</label>
-  <input id="rate" type="number" value="90" min="1" step="0.01">
+
+  <div class="rate-info" id="rateDisplay">Загрузка курса ЦБ...</div>
+
   <button onclick="calculate()">Рассчитать стоимость</button>
   <div id="result" class="result"></div>
 </div>
+
 <script>
+// Переменная для хранения курса
+let currentRate = 90; 
+
+// Функция автоматической загрузки курса ЦБ + 8%
+async function fetchCBRRate() {
+    const display = document.getElementById('rateDisplay');
+    try {
+        const response = await fetch('https://www.cbr-xml-daily.ru/daily_json.js');
+        if (!response.ok) throw new Error('Ошибка сети');
+        const data = await response.json();
+        
+        const usdRate = data.Valute.USD.Value;
+        currentRate = Math.round(usdRate * 1.08 * 100) / 100;
+        
+        display.innerText = `Актуальный курс: ${currentRate.toFixed(2)} ₽/$ (ЦБ + 8%)`;
+        display.style.color = '#4a8c33';
+    } catch (error) {
+        console.error('Ошибка загрузки курса:', error);
+        display.innerText = `Не удалось загрузить курс. Резервный: ${currentRate.toFixed(2)} ₽/$`;
+        display.style.color = '#c53030';
+    }
+}
+fetchCBRRate();
+
 const b64 = {
     prices: "eyJQMTA0IjoyODUsIlAiOjM2MCwiUyI6NDAwLCJBIjo0MjAsIkVNQyI6NTc1fQ==", 
     mult: "eyJQMTA0IjowLjI1LCJQIjowLjI1LCJTIjowLjI1LCJBIjowLjI1LCJFTUMiOjAuNX0=",   
@@ -129,7 +163,7 @@ const b64 = {
 };
 const PRICES = JSON.parse(atob(b64.prices)), MULT = JSON.parse(atob(b64.mult));
 const WORK_M2 = +atob(b64.workM2), BORTIK = +atob(b64.bortik), HOB = +atob(b64.hob);
-const S_UNDER = +atob(b64.sinkUnder), S_INSET = +atob(b64.sinkInset), S_STD = +atob(b64.sinkStd), S_K = +atob(b64.sinkK);
+ const S_UNDER = +atob(b64.sinkUnder), S_INSET = +atob(b64.sinkInset), S_STD = +atob(b64.sinkStd), S_K = +atob(b64.sinkK);
 const BATH_OVAL = +atob(b64.bathOval), BATH_BOAT = +atob(b64.bathBoat), BATH_SLOT = +atob(b64.bathSlot);
 const SEAM = +atob(b64.seam), GLUE_T = +atob(b64.glueTube), GLUE_M = +atob(b64.gluePerM), DELIV = +atob(b64.delivery);
 const MOUNT_PCT = +atob(b64.mountPct);
@@ -138,7 +172,8 @@ const SOCK_ATT = +atob(b64.socketAttached), SOCK_INT = +atob(b64.socketInt);
 const PLINTH = +atob(b64.plinth), P_SEAM = +atob(b64.panelSeam);
 const SILL_W = +atob(b64.sillWork), SILL_M = +atob(b64.sillMontage);
 const DISPOSAL = +atob(b64.disposal), MIN_ORDER = +atob(b64.minOrder);
-const SHEET_L = 3680, MARKUP = 1.08;
+const SHEET_L = 3680;
+
 const fmt = n => n.toLocaleString('ru-RU', {maximumFractionDigits: 0}) + ' ₽';
 
 function togglePanelDisplay() {
@@ -151,7 +186,6 @@ function toggleDisposal() {
 function updateUI() {
     const type = document.getElementById('productType').value;
     document.getElementById('shapeBlock').style.display = type === 'sill' ? 'none' : 'block';
-    document.getElementById('thicknessBlock').style.display = type === 'sill' ? 'none' : 'block';
     document.getElementById('sinkBlock').style.display = type === 'sill' ? 'none' : 'block';
     document.getElementById('hobBlock').style.display = type === 'kitchen' ? 'flex' : 'none';
     document.getElementById('bortikBlock').style.display = type === 'sill' ? 'none' : 'block';
@@ -200,7 +234,7 @@ function updateShapeFields() {
 }
 function calculate() {
     const type = document.getElementById('productType').value;
-    const shape = document.getElementById('shape').value;
+ const shape = document.getElementById('shape').value;
     const len1 = +document.getElementById('len1').value;
     const len2 = document.getElementById('div_len2').style.display === 'block' ? +document.getElementById('len2').value : 0;
     const len3 = document.getElementById('div_len3').style.display === 'block' ? +document.getElementById('len3').value : 0;
@@ -208,9 +242,11 @@ function calculate() {
     const series = document.getElementById('series').value;
     const sink = type !== 'sill' ? document.getElementById('sink').value : 'none';
     const hob = type === 'kitchen' ? document.getElementById('hob').value : 'no';
-const bortik = type !== 'sill' ? +document.getElementById('bortik').value : 0;
+    const bortik = type !== 'sill' ? +document.getElementById('bortik').value : 0;
     const disposal = document.getElementById('disposal').value;
-    const rate = +document.getElementById('rate').value;
+    
+    const rate = currentRate; 
+
     const hasPanel = type !== 'sill' ? document.getElementById('hasPanel').checked : false;
     const panelType = document.getElementById('panelType').value;
     const panelLen = hasPanel ? +document.getElementById('panelLen').value : 0;
@@ -227,7 +263,6 @@ const bortik = type !== 'sill' ? +document.getElementById('bortik').value : 0;
     const panelAreaM2 = hasPanel ? (panelLen / 1000) * (panelWidth / 1000) : 0;
     const totalArea = itemAreaM2 + panelAreaM2;
 
-    // --- МАТЕРИАЛ ---
     let itemSheets = 0;
     let tableLeftoverLength = 0;
 
@@ -246,13 +281,11 @@ const bortik = type !== 'sill' ? +document.getElementById('bortik').value : 0;
         panelSheets = Math.ceil(panelLen / 920) * 0.25;
     }
 
-    // Мойка/раковина
     let sinkSheetAdd = 0;
     const isIntegrated = (sink === 'integrated_std' || sink === 'integrated_k');
     const isBathIntegrated = (sink === 'bath_boat' || sink === 'bath_slot');
 
     if (isIntegrated || isBathIntegrated) {
-        // если есть большой вырез варочной — дно мойки можно взять из остатка листа
         if (hob === 'large' && isIntegrated && tableLeftoverLength >= 500) {
             sinkSheetAdd = 0;
         } else {
@@ -263,10 +296,10 @@ const bortik = type !== 'sill' ? +document.getElementById('bortik').value : 0;
 
     const baseSheets = itemSheets + panelSheets + sinkSheetAdd;
     const sheets = Math.ceil(baseSheets / MULT[series]) * MULT[series];
-    const sheetPrice = PRICES[series] * rate * MARKUP;
+    
+    const sheetPrice = PRICES[series] * rate; 
     const materialCost = sheets * sheetPrice;
 
-    // --- РАБОТЫ ---
     let itemWorks = itemAreaM2 * WORK_M2;
     if (type === 'sill') {
         itemWorks += (itemLength / 1000) * SILL_M;
@@ -290,17 +323,16 @@ const bortik = type !== 'sill' ? +document.getElementById('bortik').value : 0;
     let panelWorks = 0;
     if (hasPanel) {
         panelWorks += panelAreaM2 * (panelType === 'attached' ? P_ATT_W : P_INT_W);
-        panelWorks += sockets * (panelType === 'attached' ? SOCK_ATT : SOCK_INT);
+     panelWorks += sockets * (panelType === 'attached' ? SOCK_ATT : SOCK_INT);
         if (panelType === 'integrated') panelWorks += (panelLen / 1000) * PLINTH;
         if (panelLen >= 3000) panelWorks += P_SEAM;
     }
     const totalWorks = itemWorks + panelWorks;
     const mounting = totalWorks * MOUNT_PCT;
 
-    // --- КЛЕЙ (минимум 1 тюбик) ---
     let tubes = 0;
     if (itemLength > 0) tubes += Math.ceil(itemLength / 1000 / GLUE_M);
-if (isIntegrated || isBathIntegrated) tubes += 2;
+    if (isIntegrated || isBathIntegrated) tubes += 2;
     if (sink === 'bath_oval') tubes += 0.5;
     if (hasPanel && panelType === 'integrated') tubes += Math.ceil(panelLen / 1000 / GLUE_M);
     tubes = Math.ceil(tubes);
