@@ -25,7 +25,6 @@
   @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
   .line.total{font-size:22px;font-weight:800;padding-top:16px;border-top:2px dashed #cbd5e0;margin-top:16px;color:#1a202c; display:flex; justify-content:space-between;}
   .line.total span:last-child{color:#4a8c33;}
-  .rate-info {font-size: 13px; color: #718096; text-align: right; margin-top: 8px; font-style: italic;}
 </style>
 </head>
 <body>
@@ -119,19 +118,16 @@
     </div>
   </div>
 
-  <div class="rate-info" id="rateDisplay">Загрузка курса ЦБ...</div>
-
   <button onclick="calculate()">Рассчитать стоимость</button>
   <div id="result" class="result"></div>
 </div>
 
 <script>
-// Переменная для хранения курса
+// Переменная для хранения курса (по умолчанию 90, если интернет не загрузится)
 let currentRate = 90; 
 
-// Функция автоматической загрузки курса ЦБ + 8%
+// Функция автоматической загрузки курса ЦБ + 8% (без отображения на экране)
 async function fetchCBRRate() {
-    const display = document.getElementById('rateDisplay');
     try {
         const response = await fetch('https://www.cbr-xml-daily.ru/daily_json.js');
         if (!response.ok) throw new Error('Ошибка сети');
@@ -140,16 +136,15 @@ async function fetchCBRRate() {
         const usdRate = data.Valute.USD.Value;
         currentRate = Math.round(usdRate * 1.08 * 100) / 100;
         
-        display.innerText = `Актуальный курс: ${currentRate.toFixed(2)} ₽/$ (ЦБ + 8%)`;
-        display.style.color = '#4a8c33';
+        console.log(`Курс обновлен: ${currentRate} ₽/$`);
     } catch (error) {
-        console.error('Ошибка загрузки курса:', error);
-        display.innerText = `Не удалось загрузить курс. Резервный: ${currentRate.toFixed(2)} ₽/$`;
-        display.style.color = '#c53030';
+        console.error('Ошибка загрузки курса, используется резервный 90 ₽:', error);
     }
 }
+// Запускаем загрузку курса в фоне
 fetchCBRRate();
 
+// --- ЗАЩИЩЕННЫЕ ДАННЫЕ (Base64) ---
 const b64 = {
     prices: "eyJQMTA0IjoyODUsIlAiOjM2MCwiUyI6NDAwLCJBIjo0MjAsIkVNQyI6NTc1fQ==", 
     mult: "eyJQMTA0IjowLjI1LCJQIjowLjI1LCJTIjowLjI1LCJBIjowLjI1LCJFTUMiOjAuNX0=",   
@@ -163,7 +158,7 @@ const b64 = {
 };
 const PRICES = JSON.parse(atob(b64.prices)), MULT = JSON.parse(atob(b64.mult));
 const WORK_M2 = +atob(b64.workM2), BORTIK = +atob(b64.bortik), HOB = +atob(b64.hob);
- const S_UNDER = +atob(b64.sinkUnder), S_INSET = +atob(b64.sinkInset), S_STD = +atob(b64.sinkStd), S_K = +atob(b64.sinkK);
+const S_UNDER = +atob(b64.sinkUnder), S_INSET = +atob(b64.sinkInset), S_STD = +atob(b64.sinkStd), S_K = +atob(b64.sinkK);
 const BATH_OVAL = +atob(b64.bathOval), BATH_BOAT = +atob(b64.bathBoat), BATH_SLOT = +atob(b64.bathSlot);
 const SEAM = +atob(b64.seam), GLUE_T = +atob(b64.glueTube), GLUE_M = +atob(b64.gluePerM), DELIV = +atob(b64.delivery);
 const MOUNT_PCT = +atob(b64.mountPct);
@@ -234,7 +229,7 @@ function updateShapeFields() {
 }
 function calculate() {
     const type = document.getElementById('productType').value;
- const shape = document.getElementById('shape').value;
+    const shape = document.getElementById('shape').value;
     const len1 = +document.getElementById('len1').value;
     const len2 = document.getElementById('div_len2').style.display === 'block' ? +document.getElementById('len2').value : 0;
     const len3 = document.getElementById('div_len3').style.display === 'block' ? +document.getElementById('len3').value : 0;
@@ -245,6 +240,7 @@ function calculate() {
     const bortik = type !== 'sill' ? +document.getElementById('bortik').value : 0;
     const disposal = document.getElementById('disposal').value;
     
+    // Используем автоматически загруженный курс
     const rate = currentRate; 
 
     const hasPanel = type !== 'sill' ? document.getElementById('hasPanel').checked : false;
@@ -297,6 +293,7 @@ function calculate() {
     const baseSheets = itemSheets + panelSheets + sinkSheetAdd;
     const sheets = Math.ceil(baseSheets / MULT[series]) * MULT[series];
     
+    // Цена листа с учетом курса и наценки
     const sheetPrice = PRICES[series] * rate; 
     const materialCost = sheets * sheetPrice;
 
@@ -323,7 +320,7 @@ function calculate() {
     let panelWorks = 0;
     if (hasPanel) {
         panelWorks += panelAreaM2 * (panelType === 'attached' ? P_ATT_W : P_INT_W);
-     panelWorks += sockets * (panelType === 'attached' ? SOCK_ATT : SOCK_INT);
+        panelWorks += sockets * (panelType === 'attached' ? SOCK_ATT : SOCK_INT);
         if (panelType === 'integrated') panelWorks += (panelLen / 1000) * PLINTH;
         if (panelLen >= 3000) panelWorks += P_SEAM;
     }
