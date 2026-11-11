@@ -5,38 +5,63 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Калькулятор изделий | Grandex</title>
 <style>
-  body{font-family:-apple-system,Arial,sans-serif;background:#f4f6f8;margin:0;padding:16px;color:#222;padding-bottom:100px;}
+  body{font-family:-apple-system,Arial,sans-serif;background:#f4f6f8;margin:0;padding:16px;color:#222;padding-bottom:40px;}
   .app{max-width:600px;margin:0 auto;background:#fff;border-radius:16px;padding:24px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+  
   .logo-container {text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #edf2f7;}
   .logo-svg {max-width: 240px; width: 100%; height: auto;}
+  
   h1{font-size:20px;margin:0 0 20px;text-align:center;color:#1a202c; font-weight: 600;}
   h2.section-title {font-size:16px; color:#4a8c33; margin-top:24px; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;}
   label{display:block;font-size:13px;color:#4a5568;margin:14px 0 6px;font-weight:600}
   input,select{width:100%;box-sizing:border-box;padding:12px;font-size:15px;border:1px solid #cbd5e0;border-radius:8px;background:#f7fafc;transition:0.2s; color:#2d3748;}
   input:focus, select:focus {border-color:#4a8c33; outline:none; background:#fff; box-shadow:0 0 0 3px rgba(74,140,51,0.1);}
   input:disabled {background:#e2e8f0; color:#718096; cursor:not-allowed;}
+  
   .row{display:flex;gap:12px}.row>div{flex:1}
+  
   .toggle-container{display:flex;align-items:center;gap:10px;margin-top:16px;background:#f7fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;}
   .toggle-container input{width:18px; height:18px; margin:0;cursor:pointer}
   .toggle-container label{margin:0;cursor:pointer;font-size:14px; color:#2d3748; font-weight: 600;}
+
+  /* Блок стоимости */
+  .cost-box {
+    background: #2d3748; 
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    margin-top: 32px;
+    color: #fff;
+  }
+  .cost-label {
+    font-size: 14px;
+    color: #a0aec0;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .cost-value {
+    font-size: 36px;
+    font-weight: 800;
+    color: #fff;
+  }
   
-  /* Фиксированная панель с итоговой суммой */
-  .sticky-footer {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: #fff;
-    padding: 20px 24px;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 1000;
+  /* Блок менеджера */
+  .manager-info {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #4a5568;
+    line-height: 1.6;
   }
-  .sticky-footer .label {
-    font-size: 16px; color: #4a5568; font-weight: 600;
+  .manager-info strong {
+    color: #1a202c;
   }
-  .sticky-footer .price {
-    font-size: 24px; font-weight: 800; color: #4a8c33;
+  .manager-phone {
+    color: #c53030; 
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 16px;
   }
 </style>
 </head>
@@ -130,12 +155,19 @@
       </div>
     </div>
   </div>
-</div>
 
-<!-- Фиксированная панель с ценой -->
-<div class="sticky-footer">
-  <div class="label">ИТОГО к оплате:</div>
-  <div class="price" id="totalPrice">0 ₽</div>
+  <!-- Блок с итоговой стоимостью -->
+  <div class="cost-box">
+    <div class="cost-label">Примерная стоимость:</div>
+    <div class="cost-value" id="totalPrice">0 ₽</div>
+  </div>
+
+  <!-- Блок с менеджером (обновленный номер) -->
+  <div class="manager-info">
+    Ваш менеджер: <strong>Сергей</strong><br>
+    Телефон: <a href="tel:+79612150101" class="manager-phone">+7 (961) 215-01-01</a>
+  </div>
+
 </div>
 
 <script>
@@ -147,14 +179,14 @@ async function fetchCBRRate() {
         if (!response.ok) throw new Error('Ошибка сети');
         const data = await response.json();
         currentRate = Math.round(data.Valute.USD.Value * 1.08 * 100) / 100;
-        calculate(); // Пересчитываем цену после загрузки курса
+        calculate(); 
     } catch (error) {
         console.error('Ошибка загрузки курса, используется резервный 90 ₽:', error);
     }
 }
 fetchCBRRate();
 
-// Данные
+// Данные (Base64)
 const b64 = {
     prices: "eyJQMTA0IjoyODUsIlAiOjM2MCwiUyI6NDAwLCJBIjo0MjAsIkVNQyI6NTc1fQ==", 
     mult: "eyJQMTA0IjowLjI1LCJQIjowLjI1LCJTIjowLjI1LCJBIjowLjI1LCJFTUMiOjAuNX0=",   
@@ -229,7 +261,7 @@ function updateUI() {
     }
     toggleDisposal();
     updateShapeFields();
-    calculate(); // Пересчет при смене типа
+    calculate(); 
 }
 function updateShapeFields() {
     const shape = document.getElementById('shape').value;
@@ -244,7 +276,6 @@ function updateShapeFields() {
 
 // ГЛАВНАЯ ФУНКЦИЯ РАСЧЕТА
 function calculate() {
-    // Безопасное получение чисел (если пусто, то 0)
     const val = (id) => { let v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : v; };
     
     const type = document.getElementById('productType').value;
@@ -254,7 +285,6 @@ function calculate() {
     const len3 = document.getElementById('div_len3').style.display === 'block' ? val('len3') : 0;
     const width = val('width');
     
-    // Если ввели нули, дальше не считаем, выводим 0
     if (len1 === 0 || width === 0) {
         document.getElementById('totalPrice').innerText = '0 ₽';
         return;
@@ -361,17 +391,14 @@ function calculate() {
     const minOrderCost = totalArea < 1.5 ? MIN_ORDER : 0;
     const total = materialCost + glueCost + totalWorks + mounting + DELIV + minOrderCost;
 
-    // Выводим только итоговую цену в нижнюю панель
     document.getElementById('totalPrice').innerText = fmt(total);
 }
 
-// Вешаем событие "input" (при вводе) и "change" (при выборе) на все поля
 document.querySelectorAll('input, select').forEach(el => {
     el.addEventListener('input', calculate);
     el.addEventListener('change', calculate);
 });
 
-// Первый расчет при загрузке страницы
 updateUI();
 calculate();
 </script>
