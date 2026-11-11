@@ -24,26 +24,31 @@
   .toggle-container input{width:18px; height:18px; margin:0;cursor:pointer}
   .toggle-container label{margin:0;cursor:pointer;font-size:14px; color:#2d3748; font-weight: 600;}
 
-  /* Блок стоимости */
+  /* Блок стоимости (зеленый фон) */
   .cost-box {
     background: #4a8c33; 
     border-radius: 12px;
     padding: 24px;
     text-align: center;
     margin-top: 32px;
-    color: #fff;
+    box-shadow: 0 4px 12px rgba(74, 140, 51, 0.3);
   }
+  
+  /* Текст "Примерная стоимость" (теперь черный) */
   .cost-label {
     font-size: 14px;
-    color: #a0aec0;
+    color: #000000; /* ЧЕРНЫЙ ЦВЕТ */
     margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
+    font-weight: 600;
   }
+  
+  /* Сама цифра (тоже черная) */
   .cost-value {
     font-size: 36px;
     font-weight: 800;
-    color: #fff;
+    color: #000000; /* ЧЕРНЫЙ ЦВЕТ */
   }
   
   /* Блок менеджера */
@@ -162,7 +167,7 @@
     <div class="cost-value" id="totalPrice">0 ₽</div>
   </div>
 
-  <!-- Блок с менеджером (обновленный номер) -->
+  <!-- Блок с менеджером -->
   <div class="manager-info">
     Ваш менеджер: <strong>Сергей</strong><br>
     Телефон: <a href="tel:+79612150101" class="manager-phone">+7 (961) 215-01-01</a>
