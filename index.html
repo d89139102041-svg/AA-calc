@@ -34,21 +34,21 @@
     box-shadow: 0 4px 12px rgba(74, 140, 51, 0.3);
   }
   
-  /* Текст "Примерная стоимость" (теперь черный) */
+  /* Текст "Примерная стоимость" (черный) */
   .cost-label {
     font-size: 14px;
-    color: #000000; /* ЧЕРНЫЙ ЦВЕТ */
+    color: #000000; 
     margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
     font-weight: 600;
   }
   
-  /* Сама цифра (тоже черная) */
+  /* Сама цифра (теперь БЕЛАЯ) */
   .cost-value {
     font-size: 36px;
     font-weight: 800;
-    color: #000000; /* ЧЕРНЫЙ ЦВЕТ */
+    color: #ffffff; /* БЕЛЫЙ ЦВЕТ */
   }
   
   /* Блок менеджера */
@@ -399,9 +399,17 @@ function calculate() {
     document.getElementById('totalPrice').innerText = fmt(total);
 }
 
+// Обработка событий для мгновенного пересчета
 document.querySelectorAll('input, select').forEach(el => {
     el.addEventListener('input', calculate);
     el.addEventListener('change', calculate);
+});
+
+// Выделение текста при клике на поля ввода (чтобы старые цифры исчезали при наборе)
+document.querySelectorAll('input[type="number"]').forEach(el => {
+    el.addEventListener('focus', function() {
+        this.select();
+    });
 });
 
 updateUI();
