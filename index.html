@@ -24,6 +24,23 @@
   .toggle-container input{width:18px; height:18px; margin:0;cursor:pointer}
   .toggle-container label{margin:0;cursor:pointer;font-size:14px; color:#2d3748; font-weight: 600;}
 
+  /* Стили для подсказки по размерам */
+  .hint-box {
+    background: #ebf8ff;
+    border-left: 4px solid #3182ce;
+    padding: 12px;
+    margin-top: 12px;
+    border-radius: 0 8px 8px 0;
+    font-size: 13px;
+    color: #2b6cb0;
+    display: none; /* Скрыто по умолчанию */
+    align-items: center;
+    gap: 12px;
+  }
+  .hint-box svg {
+    flex-shrink: 0;
+  }
+
   /* Блок стоимости (зеленый фон) */
   .cost-box {
     background: #4a8c33; 
@@ -34,7 +51,6 @@
     box-shadow: 0 4px 12px rgba(74, 140, 51, 0.3);
   }
   
-  /* Текст "Примерная стоимость" (черный) */
   .cost-label {
     font-size: 14px;
     color: #000000; 
@@ -44,11 +60,10 @@
     font-weight: 600;
   }
   
-  /* Сама цифра (теперь БЕЛАЯ) */
   .cost-value {
     font-size: 36px;
     font-weight: 800;
-    color: #ffffff; /* БЕЛЫЙ ЦВЕТ */
+    color: #ffffff; 
   }
   
   /* Блок менеджера */
@@ -59,15 +74,8 @@
     color: #4a5568;
     line-height: 1.6;
   }
-  .manager-info strong {
-    color: #1a202c;
-  }
-  .manager-phone {
-    color: #c53030; 
-    font-weight: bold;
-    text-decoration: none;
-    font-size: 16px;
-  }
+  .manager-info strong { color: #1a202c; }
+  .manager-phone { color: #c53030; font-weight: bold; text-decoration: none; font-size: 16px; }
 </style>
 </head>
 <body>
@@ -92,6 +100,21 @@
       <option value="l">Угловая (Г-образная)</option>
       <option value="u">П-образная</option>
     </select>
+    
+    <!-- ПОДСКАЗКА ПО РАЗМЕРАМ -->
+    <div class="hint-box" id="shapeHint">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 35V5H35" stroke="#3182ce" stroke-width="4" stroke-linecap="round"/>
+        <path d="M15 20V5H35" stroke="#cbd5e0" stroke-width="2" stroke-dasharray="2 2"/>
+        <path d="M5 20H20" stroke="#cbd5e0" stroke-width="2" stroke-dasharray="2 2"/>
+        <text x="25" y="15" font-size="10" fill="#3182ce" font-family="Arial">Длина 1</text>
+        <text x="8" y="30" font-size="10" fill="#3182ce" font-family="Arial">Длина 2</text>
+      </svg>
+      <div>
+        <b>Внимание!</b> Указывайте размеры <b>по стенам (от угла до угла)</b>. 
+        Вычитание ширины столешницы на углы произойдет автоматически.
+      </div>
+    </div>
   </div>
   
   <div class="row">
@@ -161,13 +184,11 @@
     </div>
   </div>
 
-  <!-- Блок с итоговой стоимостью -->
   <div class="cost-box">
     <div class="cost-label">Примерная стоимость:</div>
     <div class="cost-value" id="totalPrice">0 ₽</div>
   </div>
 
-  <!-- Блок с менеджером -->
   <div class="manager-info">
     Ваш менеджер: <strong>Сергей</strong><br>
     Телефон: <a href="tel:+79612150101" class="manager-phone">+7 (961) 215-01-01</a>
@@ -176,7 +197,6 @@
 </div>
 
 <script>
-// Курс
 let currentRate = 90; 
 async function fetchCBRRate() {
     try {
@@ -186,12 +206,11 @@ async function fetchCBRRate() {
         currentRate = Math.round(data.Valute.USD.Value * 1.08 * 100) / 100;
         calculate(); 
     } catch (error) {
-        console.error('Ошибка загрузки курса, используется резервный 90 ₽:', error);
+        console.error('Ошибка загрузки курса:', error);
     }
 }
 fetchCBRRate();
 
-// Данные (Base64)
 const b64 = {
     prices: "eyJQMTA0IjoyODUsIlAiOjM2MCwiUyI6NDAwLCJBIjo0MjAsIkVNQyI6NTc1fQ==", 
     mult: "eyJQMTA0IjowLjI1LCJQIjowLjI1LCJTIjowLjI1LCJBIjowLjI1LCJFTUMiOjAuNX0=",   
@@ -214,7 +233,6 @@ const SOCK_ATT = +atob(b64.socketAttached), SOCK_INT = +atob(b64.socketInt);
 const PLINTH = +atob(b64.plinth), P_SEAM = +atob(b64.panelSeam);
 const SILL_W = +atob(b64.sillWork), SILL_M = +atob(b64.sillMontage);
 const DISPOSAL = +atob(b64.disposal), MIN_ORDER = +atob(b64.minOrder);
-const SHEET_L = 3680;
 
 const fmt = n => n.toLocaleString('ru-RU', {maximumFractionDigits: 0}) + ' ₽';
 
@@ -268,18 +286,37 @@ function updateUI() {
     updateShapeFields();
     calculate(); 
 }
+
 function updateShapeFields() {
     const shape = document.getElementById('shape').value;
+    const hint = document.getElementById('shapeHint');
+    
+    // Показываем подсказку только для угловых и П-образных
+    if (shape === 'l' || shape === 'u') {
+        hint.style.display = 'flex';
+    } else {
+        hint.style.display = 'none';
+    }
+
     document.getElementById('div_len2').style.display = (shape === 'l' || shape === 'u') ? 'block' : 'none';
     document.getElementById('div_len3').style.display = (shape === 'u') ? 'block' : 'none';
+    
     const lblLen1 = document.getElementById('lbl_len1');
     if(shape === 'straight') lblLen1.innerText = 'Длина, мм';
-    if(shape === 'l') lblLen1.innerText = 'Длина 1 (основная), мм';
-    if(shape === 'u') lblLen1.innerText = 'Длина 1 (основная), мм';
+    if(shape === 'l') lblLen1.innerText = 'Длина по стене 1, мм';
+    if(shape === 'u') lblLen1.innerText = 'Длина по стене 1, мм';
+    
+    // Меняем подписи для крыльев
+    if (shape === 'l') {
+        document.querySelector('#div_len2 label').innerText = 'Длина по стене 2, мм';
+    } else if (shape === 'u') {
+        document.querySelector('#div_len2 label').innerText = 'Длина по стене 2, мм';
+        document.querySelector('#div_len3 label').innerText = 'Длина по стене 3, мм';
+    }
+    
     calculate();
 }
 
-// ГЛАВНАЯ ФУНКЦИЯ РАСЧЕТА
 function calculate() {
     const val = (id) => { let v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : v; };
     
@@ -399,13 +436,11 @@ function calculate() {
     document.getElementById('totalPrice').innerText = fmt(total);
 }
 
-// Обработка событий для мгновенного пересчета
 document.querySelectorAll('input, select').forEach(el => {
     el.addEventListener('input', calculate);
     el.addEventListener('change', calculate);
 });
 
-// Выделение текста при клике на поля ввода (чтобы старые цифры исчезали при наборе)
 document.querySelectorAll('input[type="number"]').forEach(el => {
     el.addEventListener('focus', function() {
         this.select();
