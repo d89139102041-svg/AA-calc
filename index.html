@@ -558,11 +558,43 @@ function downloadJPEG() {
     btn.innerHTML = 'Формируем...';
 
     html2canvas(document.getElementById('receipt-template'), { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = 'Расчет_Grandex.jpg';
-        link.href = canvas.toDataURL('image/jpeg', 0.9);
-        link.click();
+        canvas.toBlob(function(blob) {
+            const fileName = 'Расчет_Grandex.jpg';
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+            if (isIOS) {
+                if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: 'image/jpeg' })] })) {
+                    const file = new File([blob], fileName, { type: 'image/jpeg' });
+                    navigator.share({
+                        files: [file],
+                        title: 'Расчет стоимости'
+                    }).then(() => {
+                        btn.innerHTML = oldText;
+                    }).catch(err => {
+                        console.log('Ошибка или отмена:', err);
+                        btn.innerHTML = oldText;
+                    });
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, '_blank');
+                    btn.innerHTML = oldText;
+                }
+            } else {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                btn.innerHTML = oldText;
+            }
+        }, 'image/jpeg', 0.95);
+    }).catch(err => {
+        console.error("Ошибка генерации:", err);
         btn.innerHTML = oldText;
+        alert("Не удалось создать картинку. Попробуйте еще раз.");
     });
 }
 
